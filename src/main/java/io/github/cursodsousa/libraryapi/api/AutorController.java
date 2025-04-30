@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,4 +69,15 @@ public class AutorController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("{id}")
+    public ResponseEntity<List<AutorDto>> pesquisar(String nome, String nacionalidade) {
+
+        autorRepository.findByNomeAndNacionalidade(nome, nacionalidade);
+
+
+
+
+    }
+
 }
