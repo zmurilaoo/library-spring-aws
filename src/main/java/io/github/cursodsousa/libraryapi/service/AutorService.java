@@ -6,6 +6,8 @@ import io.github.cursodsousa.libraryapi.exceptions.AutorExeception;
 import io.github.cursodsousa.libraryapi.model.Autor;
 import io.github.cursodsousa.libraryapi.repository.AutorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,6 +33,7 @@ public class AutorService {
 
     public Optional<Autor> obterPorId(UUID id) {
         return autorRepository.findById(id);
+
     }
 
 
@@ -38,23 +41,48 @@ public class AutorService {
         autorRepository.delete(autor);
     }
 
+    public List<Autor> filtro(String nome, String nascionalidade)  {
 
-    public List<Autor> filtro(String nome, String nacionalidade) {
-        if (nome != null && nacionalidade != null) {
-            autorRepository.findByNomeAndNacionalidade(nome, nacionalidade);
+        if(nome != null && nascionalidade != null){
+            autorRepository.findByNomeAndNacionalidade(nome, nascionalidade);
+
         }
 
-        if (nome != null) {
+        if (nome!= null) {
             autorRepository.findByNome(nome);
         }
 
-        if (nacionalidade != null) {
-            autorRepository.findByNacionalidade(nacionalidade);
+
+        if (nascionalidade != null) {
+            autorRepository.findByNacionalidade(nascionalidade);
         }
 
-        return autorRepository.findAll();
 
+        return autorRepository.findAll();
     }
+
+    public void update(String id) {
+        var idAutor =  UUID.fromString(id);
+
+        Optional<Autor> buscar = autorRepository.findById(idAutor);
+
+        if (buscar.isPresent()) {
+            Autor AutorEncotrado = buscar.get();
+
+            AutorEncotrado.setNacionalidade("Holandes");
+
+            autorRepository.save(AutorEncotrado);
+
+
+
+        }else{
+            ResponseEntity.noContent();
+        }
+    }
+
+
+
+
 
 
 }

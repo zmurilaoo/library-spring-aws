@@ -5,12 +5,14 @@ import io.github.cursodsousa.libraryapi.model.Livro;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 public record AutorDto(java.util.UUID id,
                        String nome,
                        LocalDate dataNascimento,
-                       String nascionalidade, List<Livro> livros)
+                       String nacionalidade)
 {
+
 
 
     public Autor mapearAutor(AutorDto autorDto) {
@@ -18,7 +20,7 @@ public record AutorDto(java.util.UUID id,
 
         autor.setNome(autorDto.nome());
         autor.setDataNascimento(autorDto.dataNascimento);
-        autor.setNascionalidade(autorDto.nascionalidade );
+        autor.setNacionalidade(autorDto.nacionalidade );
 
         return autor;
     }

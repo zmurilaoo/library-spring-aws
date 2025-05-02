@@ -34,7 +34,7 @@ public class Autor {
     private LocalDate dataNascimento;
 
     @Column(name = "nacionalidade", length = 50, nullable = false)
-    private String nascionalidade;
+    private String nacionalidade;
 
     @OneToMany(mappedBy = "autor", fetch = FetchType.EAGER)
     private List<Livro> livros;
@@ -52,5 +52,6 @@ public class Autor {
 
     @Column(name = "id_usuario")
     private  UUID idUsuario;
+
 
 }

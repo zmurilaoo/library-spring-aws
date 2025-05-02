@@ -7,18 +7,22 @@ import io.github.cursodsousa.libraryapi.repository.AutorRepository;
 import io.github.cursodsousa.libraryapi.service.AutorService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
-@RequestMapping("/autor")
+@RequestMapping("/autores")
 public class AutorController {
 
     @Autowired
@@ -37,7 +41,7 @@ public class AutorController {
                 .path("/{id}")
                 .buildAndExpand(autor.getId()).toUri();
 
-        return ResponseEntity.created(location).body(new RespostaDto( "Autor Criado com sucesso", autor));
+        return ResponseEntity.created(location).body(new RespostaDto( "Autor Criado com sucesso", autorDto));
 
     }
 
@@ -49,7 +53,7 @@ public class AutorController {
 
         if (pesquisar.isPresent()) {
             Autor autor = pesquisar.get();
-            AutorDto dto = new AutorDto(autor.getId(), autor.getNome(), autor.getDataNascimento(), autor.getNascionalidade());
+            AutorDto dto = new AutorDto(autor.getId(), autor.getNome(), autor.getDataNascimento(), autor.getNacionalidade());
             return ResponseEntity.ok(dto);
         }
         return ResponseEntity.notFound().build();
@@ -70,14 +74,17 @@ public class AutorController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("{id}")
-    public ResponseEntity<List<AutorDto>> pesquisar(String nome, String nacionalidade) {
+    @GetMapping
+    public ResponseEntity<List<AutorDto>> pesquisar(@RequestParam(value = "nome", required = false)String nome, @RequestParam(value = "nacionalidade", required = false)String nacionalidade) {
 
-        autorRepository.findByNomeAndNacionalidade(nome, nacionalidade);
+        List<Autor> autores =  autorService.filtro(nome, nacionalidade);
 
+        List<AutorDto> recebe = autores.stream().map(autor -> new AutorDto(autor.getId(),
+                autor.getNome(),
+                autor.getDataNascimento(),
+                autor.getNacionalidade())).collect(Collectors.toList());
 
-
+        return ResponseEntity.ok(recebe);
 
     }
-
 }
