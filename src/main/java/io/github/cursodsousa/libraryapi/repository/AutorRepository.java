@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -20,4 +21,7 @@ public interface  AutorRepository extends JpaRepository<Autor, UUID> {
 
     List<Autor> findByNacionalidade(String nacionalidade);
 
+    Optional<Autor> findByNomeAndDataNascimentoAndNacionalidade(String nome,
+                                                                LocalDate dataNascimento,
+                                                                String nacionalidade);
 }
