@@ -2,10 +2,14 @@ package io.github.cursodsousa.libraryapi.service;
 
 
 import io.github.cursodsousa.libraryapi.dto.AutorDto;
-import io.github.cursodsousa.libraryapi.exceptions.AutorExeception;
+import io.github.cursodsousa.libraryapi.dto.ErroResposta;
+import io.github.cursodsousa.libraryapi.exceptions.OperacaoNaoPermetidaExeception;
+import io.github.cursodsousa.libraryapi.exceptions.RegistroDuplicado;
 import io.github.cursodsousa.libraryapi.model.Autor;
 import io.github.cursodsousa.libraryapi.repository.AutorRepository;
+import io.github.cursodsousa.libraryapi.repository.LivroRepository;
 import io.github.cursodsousa.libraryapi.validador.AutorValidator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -17,17 +21,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AutorService {
 
     @Autowired
     private  final AutorRepository autorRepository;
     private final AutorValidator validator;
+    private final LivroRepository repository;
 
 
-    public AutorService(AutorRepository autorRepository, AutorValidator validator) {
-        this.autorRepository = autorRepository;
-        this.validator = validator;
-    }
+
 
     public Autor verificarSalvar(Autor autor ) {
         validator.validar(autor);
@@ -42,6 +45,9 @@ public class AutorService {
 
 
     public void deletar(Autor autor) {
+        if (vereficarLivro(autor)) {
+            throw  new OperacaoNaoPermetidaExeception("Esse autor possui livros, não é permetido remover!");
+        }
         autorRepository.delete(autor);
     }
 
@@ -73,25 +79,35 @@ public class AutorService {
 
     }
 
-    public ResponseEntity<Void> autalizar(@PathVariable("id") String id, @RequestBody AutorDto dto ) {
-        var idAutor = UUID.fromString(id);
+    public ResponseEntity<ErroResposta> autalizar(@PathVariable("id") String id, @RequestBody AutorDto dto ) {
+        try {
+            var idAutor = UUID.fromString(id);
 
 
-        Optional<Autor> definir = obterPorId(idAutor);
+            Optional<Autor> definir = obterPorId(idAutor);
 
-        if (definir.isEmpty()) {
-            ResponseEntity.notFound().build();
+            if (definir.isEmpty()) {
+                ResponseEntity.notFound().build();
+            }
+
+            var autor = definir.get();
+            autor.setNome(dto.nome());
+            autor.setDataNascimento(dto.dataNascimento());
+            autor.setNacionalidade(dto.nacionalidade());
+
+            atualizarPrime(autor);
+
+
+            return ResponseEntity.noContent().build();
+
+        } catch (RegistroDuplicado e) {
+           var erroDto = ErroResposta.conflito(e.getMessage());
+            return ResponseEntity.status(erroDto.status()).body(erroDto);
+
         }
+    }
 
-        var autor = definir.get();
-        autor.setNome(dto.nome());
-        autor.setDataNascimento(dto.dataNascimento());
-        autor.setNacionalidade(dto.nacionalidade());
-
-        atualizarPrime(autor);
-
-
-        return ResponseEntity.noContent().build();
-
+    public boolean vereficarLivro(Autor autor ){
+        return repository.existByAutor(autor);
     }
 }

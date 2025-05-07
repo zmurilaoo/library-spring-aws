@@ -1,11 +1,15 @@
 package io.github.cursodsousa.libraryapi.api;
 
 import io.github.cursodsousa.libraryapi.dto.AutorDto;
+import io.github.cursodsousa.libraryapi.dto.ErroResposta;
 import io.github.cursodsousa.libraryapi.dto.RespostaDto;
+import io.github.cursodsousa.libraryapi.exceptions.OperacaoNaoPermetidaExeception;
+import io.github.cursodsousa.libraryapi.exceptions.RegistroDuplicado;
 import io.github.cursodsousa.libraryapi.model.Autor;
 import io.github.cursodsousa.libraryapi.repository.AutorRepository;
 import io.github.cursodsousa.libraryapi.service.AutorService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,25 +23,32 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/autores")
+@RequiredArgsConstructor
 public class AutorController {
 
-    @Autowired
-    private  AutorRepository autorRepository;
 
-    @Autowired
-    private  AutorService autorService;
+    private final AutorRepository autorRepository;
+
+
+    private final AutorService autorService;
 
     @PostMapping
-    public ResponseEntity<RespostaDto> salvar(@RequestBody @Valid AutorDto autorDto) {
-        Autor autor = autorDto.mapearAutor(autorDto);
-        autorService.verificarSalvar(autor);
+    public ResponseEntity<Object > salvar(@RequestBody @Valid AutorDto autorDto) {
+        try {
+            Autor autor = autorDto.mapearAutor(autorDto);
+            autorService.verificarSalvar(autor);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(autor.getId()).toUri();
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(autor.getId()).toUri();
 
-        return ResponseEntity.created(location).body(new RespostaDto( "Autor Criado com sucesso", autorDto));
+            return ResponseEntity.created(location).body(new RespostaDto( "Autor Criado com sucesso", autor));
+
+        } catch (RegistroDuplicado e) {
+             var erroDto = ErroResposta.conflito( e.getMessage());
+             return ResponseEntity.status(erroDto.status()).body(erroDto);
+        }
 
     }
 
@@ -56,18 +67,25 @@ public class AutorController {
 
     }
 
-    @GetMapping({"id"})
-    public ResponseEntity<Void> deletar(@PathVariable String id) {
-        var deletarId = UUID.fromString(id);
-        Optional<Autor> pesquisar = autorService.obterPorId(deletarId);
+    @DeleteMapping({"{id}"})
+    public ResponseEntity<Object> deletar(@PathVariable String id) {
+        try {
+            var deletarId = UUID.fromString(id);
+            Optional<Autor> pesquisar = autorService.obterPorId(deletarId);
 
-        if (pesquisar.isPresent()) {
-            ResponseEntity.notFound().build();
+            if (pesquisar.isPresent()) {
+                ResponseEntity.notFound().build();
+            }
+
+            autorService.deletar(pesquisar.get());
+
+            return ResponseEntity.noContent().build();
+
+        } catch (OperacaoNaoPermetidaExeception e) {
+            var erroDelete = ErroResposta.respostaPadrao(e.getMessage());
+            return ResponseEntity.status(erroDelete.status()).body(erroDelete);
         }
 
-        autorService.deletar(pesquisar.get());
-
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
@@ -85,7 +103,7 @@ public class AutorController {
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<Void> atualizar(@PathVariable("id") String id, @RequestBody AutorDto dto) {
+    public ResponseEntity<ErroResposta> atualizar(@PathVariable("id") String id, @RequestBody AutorDto dto) {
         return autorService.autalizar(id, dto);
     }
 
